@@ -59,10 +59,6 @@ Start the Streamlit app:
 Then go to:
    http://localhost:8501
 
-📸 Preview
-
-[Insert screenshot or GIF here]
-
 ☁️ Deploy
 
 Want to take it live?
