@@ -37,10 +37,14 @@ Create a Virtual Environment (Optional but Recommended):
     pip install -r requirements.txt
 
 Install Dependencies:
-    On Linux:
+On Linux:
 
     python -m venv venv source venv/bin/activate
-    
+
+On Windows:
+
+        venv\Scripts\activate
+        
 requirements.txt Content:
 
 - streamlit
@@ -62,7 +66,7 @@ DEVELOPER_KEY = "YOUR_YOUTUBE_API_KEY"
 
 Start the Streamlit app:
 
-streamlit run streamlit_app.py
+    streamlit run streamlit_app.py
 
 Then go to:
 
