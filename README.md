@@ -18,53 +18,47 @@ A sleek and interactive Streamlit web app that lets you explore YouTube videos b
 
 📦 Requirements
 
-Python 3.8+
-
-Streamlit
-
-Pandas
-
-Google API Client
-
-Matplotlib
-
-Seaborn
+- Python 3.8+
+- Streamlit
+- Pandas
+- Google API Client
+- Matplotlib
+- Seaborn
 
 🔧 Installation
 
-Clone the Repository
+Clone the Repository:
 
 git clone https://github.com/yourusername/youtube-stats-explorer.git
 cd youtube-stats-explorer
 
-Create a Virtual Environment (Optional but Recommended)
+Create a Virtual Environment (Optional but Recommended):
 
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-Install Dependencies
+Install Dependencies:
 
 pip install -r requirements.txt
 
 requirements.txt Content:
 
-streamlit
-pandas
-google-api-python-client
-matplotlib
-seaborn
+- streamlit
+- pandas
+- google-api-python-client
+- matplotlib
+- seaborn
 
 🔑 YouTube API Key Setup
 
 To access YouTube data:
 
-Get your YouTube Data API v3 key: Get API Key
-
-Replace the placeholder in streamlit_app.py:
+- Get your YouTube Data API v3 key: Get API Key
+- Replace the placeholder in streamlit_app.py:
 
 DEVELOPER_KEY = "YOUR_YOUTUBE_API_KEY"
 
-▶️ Running the App
+📽️ Running the App
 
 Start the Streamlit app:
 
@@ -78,11 +72,9 @@ http://localhost:8501
 
 Want to take it live?
 
-Deploy on Streamlit Cloud
-
-Or host it on Hugging Face Spaces
+- Deploy on Streamlit Cloud
+- Or host it on Hugging Face Spaces
 
 🧑‍💻 Credits
 
 Built with ❤️ using Streamlit, YouTube Data API, and Python libraries.
-
