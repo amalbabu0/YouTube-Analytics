@@ -58,7 +58,7 @@ To access YouTube data:
 
 DEVELOPER_KEY = "YOUR_YOUTUBE_API_KEY"
 
-📽️ Running the App
+▶️ Running the App
 
 Start the Streamlit app:
 
