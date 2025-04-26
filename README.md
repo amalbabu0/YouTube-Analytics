@@ -34,13 +34,13 @@ cd youtube-stats-explorer
 
 Create a Virtual Environment (Optional but Recommended):
 
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-Install Dependencies:
-
     pip install -r requirements.txt
 
+Install Dependencies:
+    On Linux:
+
+    python -m venv venv source venv/bin/activate
+    
 requirements.txt Content:
 
 - streamlit
