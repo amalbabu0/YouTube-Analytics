@@ -39,7 +39,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 Install Dependencies:
 
-pip install -r requirements.txt
+    pip install -r requirements.txt
 
 requirements.txt Content:
 
