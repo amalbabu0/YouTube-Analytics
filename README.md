@@ -6,17 +6,17 @@ Predictive Analytics For YouTube Subscriber Growth Using Data Mining Technique
 
 A sleek and interactive Streamlit web app that lets you explore YouTube videos by keyword and visualize essential stats like views, likes, and comments.
 
-🚀 Features
+ Features
 
-✅ Search YouTube Videos by any keyword
+ Search YouTube Videos by any keyword
 
-📊 View Statistics (views, likes, comments) in an interactive table
+ View Statistics (views, likes, comments) in an interactive table
 
-📈 Visualize Top 10 Videos by view count in a bar chart
+ Visualize Top 10 Videos by view count in a bar chart
 
-⚙️ Customize Search Parameters using a user-friendly sidebar
+ Customize Search Parameters using a user-friendly sidebar
 
-📦 Requirements
+ Requirements
 
 - Python 3.8+
 - Streamlit
@@ -25,7 +25,7 @@ A sleek and interactive Streamlit web app that lets you explore YouTube videos b
 - Matplotlib
 - Seaborn
 
-🔧 Installation
+ Installation
 
 Clone the Repository:
 
