@@ -71,6 +71,3 @@ Start the Streamlit app:
 Then go to:
 
 http://localhost:8501
-
-
-uilt with ❤️ using Streamlit, YouTube Data API, and Python libraries.
