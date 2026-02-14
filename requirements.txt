@@ -1,5 +1,6 @@
 streamlit
 pandas
 google-api-python-client
+plotly
 matplotlib
 seaborn
