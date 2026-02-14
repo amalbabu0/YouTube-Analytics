@@ -1,86 +1,87 @@
-# streamlit_app.py
-
 import streamlit as st
 import pandas as pd
 from googleapiclient.discovery import build
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Page Title
+# Set Page Config
+st.set_page_config(page_title="YouTube Explorer", layout="wide")
+
 st.title("📺 YouTube Video Statistics Explorer")
 
-# Sidebar Inputs
-st.sidebar.header("🔍 Search Parameters")
-query = st.sidebar.text_input("Search Term", value="Python Programming")
-max_results = st.sidebar.slider("Number of Videos", min_value=10, max_value=50, step=5, value=25)
+# --- Sidebar Search Form ---
+with st.sidebar.form("search_form"):
+    st.header("🔍 Search Parameters")
+    query = st.text_input("Search Term", value="Python Programming")
+    max_results = st.slider("Number of Videos", 10, 50, 25)
+    submit_button = st.form_submit_button("Search")
 
-# YouTube API setup
+# --- API Configuration ---
+# Use st.secrets for the key! 
+DEVELOPER_KEY = st.secrets.get("youtube_api_key", "FALLBACK_KEY_IF_TESTING")
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
-DEVELOPER_KEY = "AIzaSyAW6_ssnN6OfBOWYM-OnWKNgNV3PiaQHIA"
 
-youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, developerKey=DEVELOPER_KEY)
-
-# Function to fetch YouTube data
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def youtube_search_stats(query, max_results):
+    youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, developerKey=DEVELOPER_KEY)
+    
     search_response = youtube.search().list(
         q=query,
         part="id,snippet",
         maxResults=max_results,
-        order="relevance",
         type="video"
     ).execute()
 
-    video_ids = [
-        item["id"]["videoId"]
-        for item in search_response["items"]
-        if item["id"]["kind"] == "youtube#video"
-    ]
-    video_ids_str = ",".join(video_ids)
-
+    video_ids = [item["id"]["videoId"] for item in search_response["items"]]
+    
     videos_response = youtube.videos().list(
-        id=video_ids_str,
+        id=",".join(video_ids),
         part='snippet,statistics'
     ).execute()
 
     res = []
     for i in videos_response['items']:
-        temp_res = dict(
-            v_id=i['id'],
-            v_title=i['snippet']['title'],
-            publishedAt=i['snippet']['publishedAt'][:10],
-            channelTitle=i['snippet']['channelTitle']
-        )
-        temp_res.update(i['statistics'])
+        stats = i.get('statistics', {})
+        temp_res = {
+            "Title": i['snippet']['title'],
+            "Published": i['snippet']['publishedAt'][:10],
+            "Channel": i['snippet']['channelTitle'],
+            "Views": int(stats.get('viewCount', 0)),
+            "Likes": int(stats.get('likeCount', 0)),
+            "Comments": int(stats.get('commentCount', 0)),
+            "Link": f"https://www.youtube.com/watch?v={i['id']}"
+        }
         res.append(temp_res)
 
-    df = pd.DataFrame.from_dict(res)
-    numeric_cols = ["commentCount", "favoriteCount", "likeCount", "viewCount"]
-    df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
-    df["publishedAt"] = pd.to_datetime(df["publishedAt"])
-    df = df.sort_values(by=["viewCount", "likeCount"], ascending=False).reset_index(drop=True)
+    return pd.DataFrame(res)
 
-    return df
-
-# When user clicks "Search"
-if st.sidebar.button("Search"):
-    with st.spinner("Fetching data from YouTube..."):
+# --- Logic Execution ---
+if submit_button:
+    with st.spinner("Analyzing YouTube..."):
         df = youtube_search_stats(query, max_results)
+        
+        # Summary Metrics
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total Views", f"{df['Views'].sum():,}")
+        col2.metric("Avg Likes", f"{int(df['Likes'].mean()):,}")
+        col3.metric("Total Videos", len(df))
 
-    st.success(f"Found {len(df)} videos for '{query}'")
-    st.dataframe(df)
+        # Data Display with Column Config (makes links clickable)
+        st.subheader("📋 Search Results")
+        st.dataframe(
+            df, 
+            column_config={"Link": st.column_config.LinkColumn("Video Link")},
+            use_container_width=True
+        )
 
-    # Optional Chart
-    st.subheader("📊 Top 10 Videos by View Count")
-    top_df = df.head(10)
-    fig, ax = plt.subplots(figsize=(10, 5))
-    sns.barplot(data=top_df, y="v_title", x="viewCount", ax=ax)
-    ax.set_xlabel("Views")
-    ax.set_ylabel("Video Title")
-    st.pyplot(fig)
-
-
-
-
-
+        # Charting
+        st.divider()
+        st.subheader("📊 Top 10 Videos by View Count")
+        top_df = df.nlargest(10, "Views")
+        
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.barplot(data=top_df, y="Title", x="Views", palette="viridis", ax=ax)
+        st.pyplot(fig)
+else:
+    st.info("Enter a search term in the sidebar to get started!")
