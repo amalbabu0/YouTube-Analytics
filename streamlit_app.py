@@ -17,7 +17,7 @@ max_results = st.sidebar.slider("Number of Videos", min_value=10, max_value=50, 
 # YouTube API setup
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
-DEVELOPER_KEY = st.secrets"youtube_api_key"
+DEVELOPER_KEY = "AIzaSyAW6_ssnN6OfBOWYM-OnWKNgNV3PiaQHIA"
 
 youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, developerKey=DEVELOPER_KEY)
 
@@ -79,6 +79,7 @@ if st.sidebar.button("Search"):
     ax.set_xlabel("Views")
     ax.set_ylabel("Video Title")
     st.pyplot(fig)
+
 
 
 
