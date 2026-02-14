@@ -78,14 +78,53 @@ if search_button:
     with st.spinner("Mining YouTube data..."):
         df = youtube_search_stats(query, max_results)
 
-    # 1. Key Metrics Row
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Views", f"{df['Views'].sum():,}")
-    with col2:
-        st.metric("Avg. Likes per Video", f"{int(df['Likes'].mean()):,}")
-    with col3:
-        st.metric("Top Channel", df['Channel'].iloc[0])
+# --- CUSTOM CSS FOR METRICS ---
+st.markdown("""
+<style>
+    /* Target the container of each metric */
+    [data-testid="stMetric"] {
+        background-color: #1e2130;
+        border-radius: 15px;
+        padding: 20px;
+        border: 1px solid #3e4461;
+        transition: transform 0.3s ease;
+    }
+    
+    [data-testid="stMetric"]:hover {
+        transform: translateY(-5px);
+        border-color: #ff4b4b;
+    }
+
+    /* Target the Label (Total Views, etc.) */
+    [data-testid="stMetricLabel"] p {
+        color: #a1a1aa !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+    }
+
+    /* Target the Value (The Numbers) */
+    [data-testid="stMetricValue"] div {
+        color: #ffffff !important;
+        font-size: 2rem !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# --- 1. Key Metrics Row ---
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    # Adding a sub-header or emoji inside the column for extra flavor
+    st.markdown("### 👁️")
+    st.metric("Total Views", f"{df['Views'].sum():,}")
+
+with col2:
+    st.markdown("### ❤️")
+    st.metric("Avg. Likes", f"{int(df['Likes'].mean()):,}")
+
+with col3:
+    st.markdown("### 🏆")
+    st.metric("Top Channel", df['Channel'].iloc[0])
 
     st.divider()
 
@@ -123,3 +162,4 @@ if search_button:
         )
 else:
     st.info("👈 Enter a search term in the sidebar and click 'Analyze Videos' to start.")
+
