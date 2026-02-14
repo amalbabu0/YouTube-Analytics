@@ -1,44 +1,34 @@
 import streamlit as st
 import pandas as pd
 from googleapiclient.discovery import build
-import plotly.express as px # Switched to Plotly for interactivity
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# --- PAGE CONFIG ---
-st.set_page_config(page_title="YouTube Analytics Pro", page_icon="🎬", layout="wide")
+# Page Configuration
+st.set_page_config(page_title="YouTube Explorer", layout="wide", page_icon="📺")
 
-# Custom CSS for a polished look
+# Custom CSS for better styling
 st.markdown("""
     <style>
-    .main {
-        background-color: #f5f7f9;
-    }
-    .stMetric {
-        background-color: #ffffff;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
+    .main { background-color: #f5f5f5; }
+    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SIDEBAR ---
-with st.sidebar:
-    st.image("https://upload.wikimedia.org/wikipedia/commons/e/ef/Youtube_logo.png", width=100)
-    st.title("Search Hub")
-    query = st.text_input("What are you looking for?", value="Python Programming")
-    max_results = st.slider("Result Limit", 10, 50, 25)
-    search_button = st.button("🚀 Analyze Videos", use_container_width=True)
-    st.divider()
-    st.caption("Powered by YouTube Data API v3")
+# Sidebar Inputs
+st.sidebar.header("🔍 Search Parameters")
+query = st.sidebar.text_input("Search Term", value="Python Programming")
+max_results = st.sidebar.slider("Number of Videos", min_value=10, max_value=50, step=5, value=12)
 
-# --- YOUTUBE API SETUP ---
+# YouTube API setup
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
-DEVELOPER_KEY = "AIzaSyAW6_ssnN6OfBOWYM-OnWKNgNV3PiaQHIA" # Keep this secure!
+
+DEVELOPER_KEY = "AIzaSyAW6_ssnN6OfBOWYM-OnWKNgNV3PiaQHIA" 
 
 youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, developerKey=DEVELOPER_KEY)
 
-@st.cache_data(show_spinner=False)
+@st.cache_data
 def youtube_search_stats(query, max_results):
     search_response = youtube.search().list(
         q=query,
@@ -48,78 +38,74 @@ def youtube_search_stats(query, max_results):
         type="video"
     ).execute()
 
-    video_ids = [item["id"]["videoId"] for item in search_response["items"] if item["id"]["kind"] == "youtube#video"]
+    video_ids = [item["id"]["videoId"] for item in search_response["items"]]
     video_ids_str = ",".join(video_ids)
 
-    videos_response = youtube.videos().list(id=video_ids_str, part='snippet,statistics').execute()
+    videos_response = youtube.videos().list(
+        id=video_ids_str,
+        part='snippet,statistics'
+    ).execute()
 
     res = []
     for i in videos_response['items']:
-        temp_res = {
-            'Title': i['snippet']['title'],
-            'Published': i['snippet']['publishedAt'][:10],
-            'Channel': i['snippet']['channelTitle'],
-            'Views': int(i['statistics'].get('viewCount', 0)),
-            'Likes': int(i['statistics'].get('likeCount', 0)),
-            'Comments': int(i['statistics'].get('commentCount', 0)),
-            'Link': f"https://www.youtube.com/watch?v={i['id']}"
-        }
+        temp_res = dict(
+            v_id=i['id'],
+            v_title=i['snippet']['title'],
+            thumbnail=i['snippet']['thumbnails']['high']['url'], # Fetching High-res thumbnail
+            publishedAt=i['snippet']['publishedAt'][:10],
+            channelTitle=i['snippet']['channelTitle']
+        )
+        temp_res.update(i['statistics'])
         res.append(temp_res)
 
-    df = pd.DataFrame(res)
-    df["Published"] = pd.to_datetime(df["Published"])
-    return df.sort_values(by="Views", ascending=False).reset_index(drop=True)
+    df = pd.DataFrame.from_dict(res)
+    numeric_cols = ["commentCount", "likeCount", "viewCount"]
+    df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
+    df = df.sort_values(by="viewCount", ascending=False).reset_index(drop=True)
+    return df
 
-# --- MAIN CONTENT AREA ---
+# Main Logic
 st.title("📺 YouTube Video Statistics Explorer")
-st.markdown(f"Showing results for: **{query}**")
 
-if search_button:
-    with st.spinner("Mining YouTube data..."):
+if st.sidebar.button("Search Videos"):
+    with st.spinner("Fetching data..."):
         df = youtube_search_stats(query, max_results)
 
-    # 1. Key Metrics Row
+    # Top Metrics Row
     col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Views", f"{df['Views'].sum():,}")
-    with col2:
-        st.metric("Avg. Likes per Video", f"{int(df['Likes'].mean()):,}")
-    with col3:
-        st.metric("Top Channel", df['Channel'].iloc[0])
+    top_video = df.iloc[0]
+    col1.metric("Most Viewed Video", f"{int(top_video['viewCount']):,}")
+    col2.metric("Total Videos Found", len(df))
+    col3.metric("Avg Views", f"{int(df['viewCount'].mean()):,}")
 
     st.divider()
 
-    # 2. Tabs for Data vs Charts
-    tab1, tab2 = st.tabs(["📊 Visual Analytics", "📁 Raw Data"])
+    # Video Gallery Grid
+    st.subheader("📽️ Video Results")
+    
+    # Create rows of 3 videos each
+    rows = len(df) // 3 + (1 if len(df) % 3 > 0 else 0)
+    for r in range(rows):
+        cols = st.columns(3)
+        for c in range(3):
+            index = r * 3 + c
+            if index < len(df):
+                video = df.iloc[index]
+                with cols[c]:
+                    st.image(video['thumbnail'], use_container_width=True)
+                    st.markdown(f"**{video['v_title'][:50]}...**")
+                    st.caption(f"👤 {video['channelTitle']} | 📅 {video['publishedAt']}")
+                    st.info(f"👀 {int(video['viewCount']):,} views | 👍 {int(video['likeCount']):,} likes")
+                    st.write(f"[Watch Video](https://www.youtube.com/watch?v={video['v_id']})")
+    
+    st.divider()
 
-    with tab1:
-        c1, c2 = st.columns([2, 1])
-        
-        with c1:
-            st.subheader("Top Videos by View Count")
-            # Using Plotly for interactive charts
-            fig = px.bar(df.head(10), x='Views', y='Title', orientation='h', 
-                         color='Views', color_continuous_scale='Reds',
-                         hover_data=['Channel', 'Likes'])
-            fig.update_layout(yaxis={'categoryorder':'total ascending'}, showlegend=False)
-            st.plotly_chart(fig, use_container_width=True)
+    # Visualization
+    st.subheader("📊 View Count Comparison")
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.barplot(data=df.head(10), x="viewCount", y="v_title", palette="viridis", ax=ax)
+    plt.xticks(rotation=45)
+    st.pyplot(fig)
 
-        with c2:
-            st.subheader("Engagement Ratio")
-            df['Like_Rate'] = (df['Likes'] / df['Views']) * 100
-            fig2 = px.scatter(df, x="Views", y="Likes", size="Comments", hover_name="Title", color="Channel")
-            st.plotly_chart(fig2, use_container_width=True)
-
-    with tab2:
-        st.dataframe(
-            df, 
-            column_config={
-                "Link": st.column_config.LinkColumn("Video URL"),
-                "Views": st.column_config.NumberColumn(format="%d"),
-                "Likes": st.column_config.NumberColumn(format="%d")
-            },
-            hide_index=True,
-            use_container_width=True
-        )
 else:
-    st.info("👈 Enter a search term in the sidebar and click 'Analyze Videos' to start.")
+    st.info("👈 Enter a keyword and click Search to begin!")
