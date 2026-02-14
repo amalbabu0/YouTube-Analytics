@@ -18,7 +18,7 @@ with st.sidebar.form("search_form"):
 
 # --- API Configuration ---
 # Use st.secrets for the key! 
-DEVELOPER_KEY = st.secrets.get("youtube_api_key", "FALLBACK_KEY_IF_TESTING")
+DEVELOPER_KEY = "AIzaSyAW6_ssnN6OfBOWYM-OnWKNgNV3PiaQHIA"
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
 
@@ -85,3 +85,4 @@ if submit_button:
         st.pyplot(fig)
 else:
     st.info("Enter a search term in the sidebar to get started!")
+
