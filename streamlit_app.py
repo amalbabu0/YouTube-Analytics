@@ -56,7 +56,7 @@ max_results = st.sidebar.slider("Number of Videos", min_value=10, max_value=50, 
 
 # YouTube API setup
 
-DEVELOPER_KEY = "AIzaSyAW6_ssnN6OfBOWYM-OnWKNgNV3PiaQHIA"  
+DEVELOPER_KEY = "Your API Key"  
 youtube = build("youtube", "v3", developerKey=DEVELOPER_KEY)
 
 @st.cache_data
