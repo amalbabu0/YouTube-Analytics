@@ -35,6 +35,7 @@ with st.sidebar:
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
 DEVELOPER_KEY = "AIzaSyAW6_ssnN6OfBOWYM-OnWKNgNV3PiaQHIA" 
+# if you want this api key use it no problem
 
 youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, developerKey=DEVELOPER_KEY)
 
