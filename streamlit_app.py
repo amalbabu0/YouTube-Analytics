@@ -1,169 +1,125 @@
 import streamlit as st
 import pandas as pd
 from googleapiclient.discovery import build
-import plotly.express as px  # Switched to Plotly for interactivity
+import plotly.express as px # Switched to Plotly for interactivity
 
-# Page Configuration
-st.set_page_config(page_title="YouTube Explorer Pro", layout="wide", page_icon="📺")
+# --- PAGE CONFIG ---
+st.set_page_config(page_title="YouTube Analytics Pro", page_icon="🎬", layout="wide")
 
-# Custom CSS for Interactive Metrics and UI
+# Custom CSS for a polished look
 st.markdown("""
     <style>
-    .main { background-color: #f8f9fa; }
-    
-    /* Custom Metric Cards */
-    .metric-container {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 20px;
+    .main {
+        background-color: #f5f7f9;
     }
-    .metric-card {
-        background-color: white;
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        border-left: 5px solid #ff0000;
-        width: 100%;
-        text-align: center;
-    }
-    .metric-label { font-size: 14px; color: #6c757d; font-weight: bold; text-transform: uppercase; }
-    .metric-value { font-size: 24px; font-weight: 800; margin: 5px 0; }
-    
-    /* Specific Colors for your request */
-    .color-most-viewed { color: #E74C3C; } /* Soft Red */
-    .color-total { color: #2E86C1; }       /* Blue */
-    .color-avg { color: #239B56; }         /* Green */
-    
-    .video-card {
-        background: white;
-        padding: 10px;
+    .stMetric {
+        background-color: #ffffff;
+        padding: 15px;
         border-radius: 10px;
-        transition: transform 0.2s;
-        border: 1px solid #eee;
-    }
-    .video-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     </style>
     """, unsafe_allow_html=True)
 
-# Sidebar Inputs
-st.sidebar.header("🔍 Search Parameters")
-query = st.sidebar.text_input("Search Term", value="Python Programming")
-max_results = st.sidebar.slider("Number of Videos", min_value=10, max_value=50, step=5, value=25)
+# --- SIDEBAR ---
+with st.sidebar:
+    st.image("https://upload.wikimedia.org/wikipedia/commons/e/ef/Youtube_logo.png", width=100)
+    st.title("Search Hub")
+    query = st.text_input("What are you looking for?", value="Python Programming")
+    max_results = st.slider("Result Limit", 10, 50, 25)
+    search_button = st.button("🚀 Analyze Videos", use_container_width=True)
+    st.divider()
+    st.caption("Powered by YouTube Data API v3")
 
-# YouTube API setup
+# --- YOUTUBE API SETUP ---
+YOUTUBE_API_SERVICE_NAME = "youtube"
+YOUTUBE_API_VERSION = "v3"
+DEVELOPER_KEY = "AIzaSyAW6_ssnN6OfBOWYM-OnWKNgNV3PiaQHIA" 
 
-DEVELOPER_KEY = "AIzaSyAW6_ssnN6OfBOWYM-OnWKNgNV3PiaQHIA"  
-youtube = build("youtube", "v3", developerKey=DEVELOPER_KEY)
+youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, developerKey=DEVELOPER_KEY)
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def youtube_search_stats(query, max_results):
     search_response = youtube.search().list(
-        q=query, part="id,snippet", maxResults=max_results, order="relevance", type="video"
+        q=query,
+        part="id,snippet",
+        maxResults=max_results,
+        order="relevance",
+        type="video"
     ).execute()
 
-    video_ids = [item["id"]["videoId"] for item in search_response["items"]]
-    videos_response = youtube.videos().list(
-        id=",".join(video_ids), part='snippet,statistics'
-    ).execute()
+    video_ids = [item["id"]["videoId"] for item in search_response["items"] if item["id"]["kind"] == "youtube#video"]
+    video_ids_str = ",".join(video_ids)
+
+    videos_response = youtube.videos().list(id=video_ids_str, part='snippet,statistics').execute()
 
     res = []
     for i in videos_response['items']:
-        temp_res = dict(
-            v_id=i['id'],
-            v_title=i['snippet']['title'],
-            thumbnail=i['snippet']['thumbnails']['high']['url'],
-            publishedAt=i['snippet']['publishedAt'][:10],
-            channelTitle=i['snippet']['channelTitle']
-        )
-        stats = {k: int(v) for k, v in i['statistics'].items() if k in ["commentCount", "likeCount", "viewCount"]}
-        temp_res.update(stats)
+        temp_res = {
+            'Title': i['snippet']['title'],
+            'Published': i['snippet']['publishedAt'][:10],
+            'Channel': i['snippet']['channelTitle'],
+            'Views': int(i['statistics'].get('viewCount', 0)),
+            'Likes': int(i['statistics'].get('likeCount', 0)),
+            'Comments': int(i['statistics'].get('commentCount', 0)),
+            'Link': f"https://www.youtube.com/watch?v={i['id']}"
+        }
         res.append(temp_res)
 
-    df = pd.DataFrame(res).fillna(0)
-    return df.sort_values(by="viewCount", ascending=False).reset_index(drop=True)
+    df = pd.DataFrame(res)
+    df["Published"] = pd.to_datetime(df["Published"])
+    return df.sort_values(by="Views", ascending=False).reset_index(drop=True)
 
-# Main Logic
+# --- MAIN CONTENT AREA ---
 st.title("📺 YouTube Video Statistics Explorer")
+st.markdown(f"Showing results for: **{query}**")
 
-if st.sidebar.button("Search Videos"):
-    with st.spinner("Analyzing YouTube Data..."):
+if search_button:
+    with st.spinner("Mining YouTube data..."):
         df = youtube_search_stats(query, max_results)
 
-    # UI Metric Cards with Custom Colors
-    top_video_views = df.iloc[0]['viewCount']
-    avg_views = df['viewCount'].mean()
-    total_vids = len(df)
-
+    # 1. Key Metrics Row
     col1, col2, col3 = st.columns(3)
-    
-    col1.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-label">Most Viewed Video</div>
-            <div class="metric-value color-most-viewed">{top_video_views:,}</div>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    col2.markdown(f"""
-        <div class="metric-card" style="border-left-color: #2E86C1;">
-            <div class="metric-label">Total Videos Found</div>
-            <div class="metric-value color-total">{total_vids}</div>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    col3.markdown(f"""
-        <div class="metric-card" style="border-left-color: #239B56;">
-            <div class="metric-label">Avg Views</div>
-            <div class="metric-value color-avg">{int(avg_views):,}</div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    st.write("##")
-
-    # Interactive Graph using Plotly
-    st.subheader("📊 Interactive View Count Analysis")
-    fig = px.bar(
-        df.head(15), 
-        x="viewCount", 
-        y="v_title", 
-        orientation='h',
-        color="viewCount",
-        color_continuous_scale='Viridis',
-        hover_data=["channelTitle", "likeCount"],
-        labels={'viewCount': 'Views', 'v_title': 'Video Title'},
-        text_auto='.2s'
-    )
-    fig.update_layout(
-        yaxis={'categoryorder':'total ascending'},
-        height=500,
-        margin=dict(l=0, r=0, b=0, t=0),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    with col1:
+        st.metric("Total Views", f"{df['Views'].sum():,}")
+    with col2:
+        st.metric("Avg. Likes per Video", f"{int(df['Likes'].mean()):,}")
+    with col3:
+        st.metric("Top Channel", df['Channel'].iloc[0])
 
     st.divider()
 
-    # Video Gallery Grid
-    st.subheader("📽️ Video Results")
-    for i in range(0, len(df), 3):
-        cols = st.columns(3)
-        for j in range(3):
-            if i + j < len(df):
-                video = df.iloc[i + j]
-                with cols[j]:
-                    st.markdown(f"""
-                        <div class="video-card">
-                            <img src="{video['thumbnail']}" style="width:100%; border-radius:10px;">
-                            <p style="margin-top:10px; font-weight:bold; height:50px; overflow:hidden;">{video['v_title']}</p>
-                            <p style="color:#666; font-size:0.8em;">👤 {video['channelTitle']}</p>
-                            <p style="color:#ff0000; font-weight:bold;">👀 {int(video['viewCount']):,} views</p>
-                            <a href="https://www.youtube.com/watch?v={video['v_id']}" target="_blank">Watch Video</a>
-                        </div>
-                    """, unsafe_allow_html=True)
+    # 2. Tabs for Data vs Charts
+    tab1, tab2 = st.tabs(["📊 Visual Analytics", "📁 Raw Data"])
 
+    with tab1:
+        c1, c2 = st.columns([2, 1])
+        
+        with c1:
+            st.subheader("Top Videos by View Count")
+            # Using Plotly for interactive charts
+            fig = px.bar(df.head(10), x='Views', y='Title', orientation='h', 
+                         color='Views', color_continuous_scale='Reds',
+                         hover_data=['Channel', 'Likes'])
+            fig.update_layout(yaxis={'categoryorder':'total ascending'}, showlegend=False)
+            st.plotly_chart(fig, use_container_width=True)
+
+        with c2:
+            st.subheader("Engagement Ratio")
+            df['Like_Rate'] = (df['Likes'] / df['Views']) * 100
+            fig2 = px.scatter(df, x="Views", y="Likes", size="Comments", hover_name="Title", color="Channel")
+            st.plotly_chart(fig2, use_container_width=True)
+
+    with tab2:
+        st.dataframe(
+            df, 
+            column_config={
+                "Link": st.column_config.LinkColumn("Video URL"),
+                "Views": st.column_config.NumberColumn(format="%d"),
+                "Likes": st.column_config.NumberColumn(format="%d")
+            },
+            hide_index=True,
+            use_container_width=True
+        )
 else:
-    st.info("👈 Enter a keyword and click Search to begin!")
+    st.info("👈 Enter a search term in the sidebar and click 'Analyze Videos' to start.")
