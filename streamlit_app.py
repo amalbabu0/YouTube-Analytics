@@ -14,7 +14,7 @@ st.markdown("""
     }
     .stMetric {
         background-color: #ffffff;
-        padding: 15px;
+        padding: 15px;AIzaSyA7GB_cM8aTCtgTpjulH70G6khTCvDjlVI
         border-radius: 10px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
@@ -34,7 +34,7 @@ with st.sidebar:
 # --- YOUTUBE API SETUP ---
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
-DEVELOPER_KEY = "AIzaSyAW6_ssnN6OfBOWYM-OnWKNgNV3PiaQHIA" 
+DEVELOPER_KEY = "AIzaSyA7GB_cM8aTCtgTpjulH70G6khTCvDjlVI" 
 # if you want this api key use it no problem
 
 youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, developerKey=DEVELOPER_KEY)
